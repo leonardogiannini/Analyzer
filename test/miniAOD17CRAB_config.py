@@ -1,14 +1,14 @@
 import FWCore.ParameterSet.Config as cms
 process = cms.Process("Pippo")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 process.load('Configuration/StandardSequences/GeometryDB_cff')
 process.load('Configuration/StandardSequences/MagneticField_38T_cff')
 process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
 process.load('Configuration/StandardSequences/Reconstruction_cff')
 process.load('Configuration/EventContent/EventContent_cff')
-process.GlobalTag.globaltag = '94X_mc2017_realistic_v14'
+process.GlobalTag.globaltag = '101X_mcRun2_asymptotic_v2'
 process.options = cms.untracked.PSet()
 
 #process.options.numberOfThreads = cms.untracked.uint32(1)
