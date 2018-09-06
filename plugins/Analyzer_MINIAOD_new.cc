@@ -137,6 +137,8 @@ class Analyzer_MINIAOD_new : public edm::one::EDAnalyzer<edm::one::SharedResourc
       double jeteta;
       double jetphi;
       double jetmass;
+      double jetmass_uncorr;
+      double jetpt_uncorr;
       
       double jetCSVv2;
       double jetCMVA;
@@ -270,10 +272,12 @@ Analyzer_MINIAOD_new::Analyzer_MINIAOD_new(const edm::ParameterSet& iConfig)
     tree->Branch("pv_z",&pv_z, "pv_z/D");
     
     tree->Branch("jet_pt",&jetpt, "jet_pt/D");
+    tree->Branch("jet_pt_uncorr",&jetpt_uncorr, "jet_pt_uncorr/D");    
     tree->Branch("jet_ptLOG",&jetptLOG, "jet_ptLOG/D");
     tree->Branch("jet_eta",&jeteta, "jet_eta/D");
     tree->Branch("jet_phi",&jetphi, "jet_phi/D");
-    tree->Branch("jet_mass",&jetmass, "jet_mass/D");        
+    tree->Branch("jet_mass",&jetmass, "jet_mass/D");  
+    tree->Branch("jet_mass_uncorr",&jetmass_uncorr, "jet_mass_uncorr/D");
     tree->Branch("jet_CSVv2", &jetCSVv2,  "jet_CSVv2/D");
     tree->Branch("jet_CMVA", &jetCMVA,  "jet_CMVA/D");
     tree->Branch("jet_TCHE", &jetTCHE,  "jet_TCHE/D");
@@ -635,6 +639,8 @@ Analyzer_MINIAOD_new::analyze(const edm::Event& iEvent, const edm::EventSetup& i
                                         
                     seed_3D_TrackProbability[seeds_max_counter]=prob3D;
                     seed_2D_TrackProbability[seeds_max_counter]=prob2D;
+                    
+//                     std::cout<<"my probability "<<prob3D<<" my probability "<<prob2D<<" jet "<<(*iter).eta()<<(*iter).phi()<<iter->correctedJet("Uncorrected").mass()<<iter->correctedJet("Uncorrected").pt()<<std::endl;
 
                   
                 }
@@ -743,6 +749,9 @@ Analyzer_MINIAOD_new::analyze(const edm::Event& iEvent, const edm::EventSetup& i
                 
             }
             
+            
+            jetmass_uncorr=iter->correctedJet("Uncorrected").mass();
+            jetpt_uncorr=iter->correctedJet("Uncorrected").pt();
             jetpt=iter->pt();
             jetptLOG=log(iter->pt());
             jeteta=iter->eta();
@@ -754,7 +763,7 @@ Analyzer_MINIAOD_new::analyze(const edm::Event& iEvent, const edm::EventSetup& i
             jetSSVHE=iter->bDiscriminator("pfSimpleInclusiveSecondaryVertexHighEffBJetTags");
             
             jetDeepCSV=iter->bDiscriminator("pfDeepCSVJetTags:probbb")+iter->bDiscriminator("pfDeepCSVJetTags:probb");
-            jetDeepFlavour=iter->bDiscriminator("pfDeepFlavourJetTags:probbb")+iter->bDiscriminator("pfDeepFlavourJetTags:probb");
+            jetDeepFlavour=iter->bDiscriminator("pfDeepFlavourJetTags:probbb")+iter->bDiscriminator("pfDeepFlavourJetTags:probb")+iter->bDiscriminator("pfDeepFlavourJetTags:problepb");
             
             jetflavour=jet_flavour_function(*iter, 1);      
             jetNseeds=std::min((int)SortedSeedsMap.size(),10);
