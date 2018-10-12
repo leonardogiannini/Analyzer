@@ -102,17 +102,37 @@ class Analyzer_MINIAOD_new : public edm::one::EDAnalyzer<edm::one::SharedResourc
 
       // ----------member data ---------------------------
       // ----------member data ---------------------------
+      //
+
+      int jet_Deepflavour_function(const pat::Jet& jet,
+                                   const std::vector<reco::GenParticle>& gToBB,
+                                   const std::vector<reco::GenParticle>& gToCC,
+                                   const std::vector<reco::GenParticle>& neutrinosLepB,
+                                   const std::vector<reco::GenParticle>& neutrinosLepB_C,
+                                   const std::vector<reco::GenParticle>& alltaus,
+                                   bool usePhysForLightAndUndefined);    
       
       int jet_flavour_function(const pat::Jet& jet, bool usePhysForLightAndUndefined);
+      
       double deltaPhi(double phi1, double phi2);
-      void trackToTrack(std::vector<reco::TransientTrack> selTracks, std::vector<reco::TransientTrack>::const_iterator it, const pat::Jet &jet, const reco::Vertex &pv, std::vector<trackVars2>& nearTracks, std::vector<float> masses, int index);
+      
+      void trackToTrack(std::vector<reco::TransientTrack> selTracks,
+                        std::vector<reco::TransientTrack>::const_iterator it, 
+                        const pat::Jet &jet, 
+                        const reco::Vertex &pv, 
+                        std::vector<trackVars2>& nearTracks, 
+                        std::vector<float> masses, 
+                        int index);
+      
       void checkEventSetup(const edm::EventSetup & iSetup);
       
+      edm::EDGetTokenT<std::vector< pat::PackedGenParticle > > genParticleToken;
       edm::EDGetTokenT<edm::View<pat::PackedCandidate> > CandidateToken;
       edm::EDGetTokenT<std::vector<pat::Jet> > jetsToken;
       edm::EDGetTokenT<reco::VertexCollection> token_primaryVertex;
       edm::EDGetTokenT<reco::BeamSpot> token_beamSpot;
       edm::EDGetTokenT<double> rhoToken;
+      
       
       edm::Service<TFileService> file;
       TTree *tree;
@@ -150,6 +170,9 @@ class Analyzer_MINIAOD_new : public edm::one::EDAnalyzer<edm::one::SharedResourc
       int jetflavour;
       int jetNseeds;
       
+      int isPhysB,isPhysGBB,isPhysBB,isPhysLeptonicB,isPhysLeptonicB_C,isPhysC,isPhysGCC,isPhysCC,isPhysTau,isPhysUD,isPhysS,isPhysG,isPhysUndefined;
+      int isB,isGBB,isBB,isLeptonicB,isLeptonicB_C,isC,isGCC,isCC,isTau,isUD,isS,isG,isUndefined;
+
       double seed_pt[10];
       double seed_eta[10];
       double seed_phi[10];
@@ -249,7 +272,7 @@ class Analyzer_MINIAOD_new : public edm::one::EDAnalyzer<edm::one::SharedResourc
       
       std::vector<trackVars2> nearTracks;
       std::multimap<double,std::pair<const reco::TransientTrack*,const std::vector<trackVars2>>> SortedSeedsMap;
-    
+      std::vector<reco::GenParticle> neutrinosLepB, neutrinosLepB_C, gToBB, gToCC, alltaus;
       
 };
 
@@ -286,6 +309,34 @@ Analyzer_MINIAOD_new::Analyzer_MINIAOD_new(const edm::ParameterSet& iConfig)
     tree->Branch("jet_DeepFlavour", &jetDeepFlavour,  "jet_DeepFlavour/D");
     tree->Branch("jet_flavour",&jetflavour, "jet_flavour/I");
     tree->Branch("jet_Nseeds",&jetNseeds, "jet_Nseeds/I"); 
+    
+    tree->Branch("isPhysB",&isPhysB, "isPhysB/I");
+    tree->Branch("isPhysGBB",&isPhysGBB, "isPhysGBB/I");
+    tree->Branch("isPhysBB",&isPhysBB, "isPhysBB/I");
+    tree->Branch("isPhysLeptonicB",&isPhysLeptonicB, "isPhysLeptonicB/I");
+    tree->Branch("isPhysLeptonicB_C",&isPhysLeptonicB_C, "isPhysLeptonicB_C/I");
+    tree->Branch("isPhysC",&isPhysC, "isPhysC/I");
+    tree->Branch("isPhysGCC",&isPhysGCC, "isPhysGCC/I");
+    tree->Branch("isPhysCC",&isPhysCC, "isPhysCC/I");
+    tree->Branch("isPhysTau",&isPhysTau, "isPhysTau/I");
+    tree->Branch("isPhysUD",&isPhysUD, "isPhysUD/I");
+    tree->Branch("isPhysS",&isPhysS, "isPhysS/I");
+    tree->Branch("isPhysG",&isPhysG, "isPhysG/I");
+    tree->Branch("isPhysUndefined",&isPhysUndefined, "isPhysUndefined/I");
+    
+    tree->Branch("isB",&isB, "isB/I");
+    tree->Branch("isGBB",&isGBB, "isGBB/I");
+    tree->Branch("isBB",&isBB, "isBB/I");
+    tree->Branch("isLeptonicB",&isLeptonicB, "isLeptonicB/I");
+    tree->Branch("isLeptonicB_C",&isLeptonicB_C, "isLeptonicB_C/I");
+    tree->Branch("isC",&isC, "isC/I");
+    tree->Branch("isGCC",&isGCC, "isGCC/I");
+    tree->Branch("isCC",&isCC, "isCC/I");
+    tree->Branch("isTau",&isTau, "isTau/I");
+    tree->Branch("isUD",&isUD, "isUD/I");
+    tree->Branch("isS",&isS, "isS/I");
+    tree->Branch("isG",&isG, "isG/I");
+    tree->Branch("isUndefined",&isUndefined, "isUndefined/I");
    
     tree->Branch("seed_pt",&seed_pt, "seed_pt[10]/D");
     tree->Branch("seed_eta",&seed_eta, "seed_eta[10]/D");
@@ -378,7 +429,7 @@ Analyzer_MINIAOD_new::Analyzer_MINIAOD_new(const edm::ParameterSet& iConfig)
     tree->Branch("nearTracks_PCAjetDirs_DEtaLog",&nearTracks_PCAjetDirs_DEtaLog,"nearTracks_PCAjetDirs_DEtaLog[200]/D");
     
 
-    
+    genParticleToken = consumes<std::vector< pat::PackedGenParticle > >(edm::InputTag("packedGenParticles"));   
     CandidateToken = consumes<edm::View<pat::PackedCandidate>>(edm::InputTag("packedPFCandidates"));
     token_primaryVertex = consumes<reco::VertexCollection>(edm::InputTag("offlineSlimmedPrimaryVertices"));
     token_beamSpot = consumes<reco::BeamSpot>(edm::InputTag("offlineBeamSpot"));
@@ -416,7 +467,11 @@ Analyzer_MINIAOD_new::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     edm::Handle<std::vector<pat::Jet> > jetsCollection;
     iEvent.getByToken(jetsToken, jetsCollection);
     std::vector<pat::Jet>  ak4jets = *jetsCollection.product();    
-    
+   
+    edm::Handle<std::vector<pat::PackedGenParticle> > genParticlesCollection;
+    iEvent.getByToken(genParticleToken, genParticlesCollection);
+    std::vector<pat::PackedGenParticle>  genParticles = *genParticlesCollection.product();
+
     //2nd way to get objects
     edm::Handle<edm::View<pat::PackedCandidate> > tracks;
     iEvent.getByToken(CandidateToken, tracks);
@@ -446,6 +501,59 @@ Analyzer_MINIAOD_new::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         edm::Handle<reco::BeamSpot> beamSpot;
         iEvent.getByToken(token_beamSpot,beamSpot);
         
+        //store what you need of genParticles
+        neutrinosLepB.clear();
+        neutrinosLepB_C.clear();
+        gToBB.clear();
+        gToCC.clear();
+        alltaus.clear();        
+        
+        //taken from DeepFlavour to have more categories (gluon splitting/tau/semileptonic B hadrons)
+        //the inclusive categories are sufficient
+        
+        for (unsigned int g = 0; g < genParticles.size(); g++) {
+
+            const reco::Candidate* mother=genParticles[g].mother(0);        
+            if (mother==NULL) break;
+
+            auto newgenP=mother->daughter(0);
+            if (newgenP==NULL) break;
+            
+            const reco::GenParticle &gen = static_cast< const reco::GenParticle &>( *newgenP);
+            
+            if(abs(gen.pdgId())==12||abs(gen.pdgId())==14||abs(gen.pdgId())==16) {
+                
+                const reco::GenParticle* mother =  static_cast< const reco::GenParticle*> (gen.mother());
+                
+                if(mother!=NULL) {
+                    if((abs(mother->pdgId())>500&&abs(mother->pdgId())<600)||(abs(mother->pdgId())>5000&&abs(mother->pdgId())<6000)) neutrinosLepB.emplace_back(gen);
+                    if((abs(mother->pdgId())>400&&abs(mother->pdgId())<500)||(abs(mother->pdgId())>4000&&abs(mother->pdgId())<5000)) neutrinosLepB_C.emplace_back(gen);               
+                  
+                }
+                
+                else  std::cout << "No mother" << std::endl;
+                
+            }         
+            
+            int id(std::abs(gen.pdgId())); 
+            int status(gen.status());
+            
+            if (id == 21 && status >= 21 && status <= 59) { //// Pythia8 hard scatter, ISR, or FSR
+                
+                if ( gen.numberOfDaughters() == 2 ) {
+                    
+                const reco::Candidate* d0 = gen.daughter(0);
+                const reco::Candidate* d1 = gen.daughter(1);
+
+                if ( std::abs(d0->pdgId()) == 5 && std::abs(d1->pdgId()) == 5 && d0->pdgId()*d1->pdgId() < 0 && reco::deltaR(*d0, *d1) < 0.4) gToBB.push_back(gen) ;
+                if ( std::abs(d0->pdgId()) == 4 && std::abs(d1->pdgId()) == 4 && d0->pdgId()*d1->pdgId() < 0 && reco::deltaR(*d0, *d1) < 0.4) gToCC.push_back(gen) ;
+                    
+                }  
+            }
+                        
+            if(id == 15 && false) alltaus.push_back(gen);
+            
+        } //close GenParticles' loop
         
         //std::cout << "Transient tracks" << std::endl;
         std::vector<reco::TransientTrack> selectedTracks;
@@ -473,8 +581,7 @@ Analyzer_MINIAOD_new::analyze(const edm::Event& iEvent, const edm::EventSetup& i
         
         for (std::vector<pat::Jet>::const_iterator iter = ak4jets.begin(); iter != ak4jets.end(); ++iter) {
             
-            
-            
+                       
             if (iter->pt()<20) continue;
            
             GlobalVector direction(iter->px(), iter->py(), iter->pz());
@@ -767,6 +874,45 @@ Analyzer_MINIAOD_new::analyze(const edm::Event& iEvent, const edm::EventSetup& i
             
             jetflavour=jet_flavour_function(*iter, 1);      
             jetNseeds=std::min((int)SortedSeedsMap.size(),10);
+            
+            isPhysB=0; isPhysBB=0; isPhysGBB=0; isPhysC=0; isPhysCC=0; isPhysGCC=0; isPhysUD=0; isPhysS=0; isPhysG=0, isPhysLeptonicB=0, isPhysLeptonicB_C=0, isPhysUndefined=0; isPhysTau=0;
+            isB=0; isBB=0; isGBB=0; isC=0; isCC=0; isGCC=0; isUD=0; isS=0; isG=0, isLeptonicB=0, isLeptonicB_C=0, isUndefined=0; isTau=0;
+            
+            switch(jet_Deepflavour_function(*iter, gToBB, gToCC, neutrinosLepB, neutrinosLepB_C, alltaus, 1)) { 
+                
+                case 1: isPhysUD=1; break;
+                case 3:  isPhysS=1; break;
+                case 5:  isPhysB=1; break;
+                case 55: isPhysBB=1; break;
+                case 2155: isPhysGBB=1; break;
+                case 4:  isPhysC=1; break;
+                case 44: isPhysCC=1; break;
+                case 2144: isPhysGCC=1; break;
+                case 15: isPhysTau=1;break;
+                case 21:  isPhysG=1; break;              
+                case 155: isPhysLeptonicB=1; break;
+                case 145: isPhysLeptonicB_C=1; break;
+                default : isPhysUndefined=1; break;                
+                
+            }
+            
+            switch(jet_Deepflavour_function(*iter, gToBB, gToCC, neutrinosLepB, neutrinosLepB_C, alltaus, 0)) {
+                
+                case 1: isUD=1; break;
+                case 3:  isS=1; break;
+                case 5:  isB=1; break;
+                case 55: isBB=1; break;
+                case 2155: isGBB=1; break;
+                case 4:  isC=1; break;
+                case 44: isCC=1; break;
+                case 2144: isGCC=1; break;
+                case 15: isTau=1;break;
+                case 21:  isG=1; break;
+                case 155: isLeptonicB=1; break;
+                case 145: isLeptonicB_C=1; break;
+                default : isUndefined=1; break;
+                
+            }
 
             
             tree->Fill();
@@ -806,7 +952,6 @@ double Analyzer_MINIAOD_new::deltaPhi(double phi1, double phi2) {
     
 }
 
-
 // Jet Flavour
 // BB 5
 // B  5
@@ -839,9 +984,11 @@ int Analyzer_MINIAOD_new::jet_flavour_function(const pat::Jet& jet, bool usePhys
             else return 0;
         }
     }
-    else if(hflav == 4) { //C jet
-        return 4;
+    
+    else if(hflav == 4) { //C jet //here no count of chadrons!?
+        return 4;        
     }
+    
     else { //not a heavy jet
         if(std::abs(pflav) == 4 || std::abs(pflav) == 5 || nbs || ncs) {
             if(usePhysForLightAndUndefined){
@@ -867,6 +1014,149 @@ int Analyzer_MINIAOD_new::jet_flavour_function(const pat::Jet& jet, bool usePhys
     }
 }
 
+// Jet Flavour (DF function)
+// GBB 2155
+// LepB  155,145
+// BB 55
+// B  5
+// C  4
+// GCC 2144
+// CC 44
+// UD 1
+// S  3
+// G  21
+// NAN 0
+
+int Analyzer_MINIAOD_new::jet_Deepflavour_function (const pat::Jet& jet,
+                                                    const std::vector<reco::GenParticle>& gToBB,
+                                                    const std::vector<reco::GenParticle>& gToCC,
+                                                    const std::vector<reco::GenParticle>& neutrinosLepB,
+                                                    const std::vector<reco::GenParticle>& neutrinosLepB_C,
+                                                    const std::vector<reco::GenParticle>& alltaus,
+                                                    bool usePhysForLightAndUndefined) 
+
+    {
+    
+     //baseline   
+    int hflav = abs(jet.hadronFlavour());
+    int pflav = abs(jet.partonFlavour());
+    int physflav = 0;    
+    if(jet.genParton()) physflav=abs(jet.genParton()->pdgId());    
+    std::size_t nbs = jet.jetFlavourInfo().getbHadrons().size();
+    std::size_t ncs = jet.jetFlavourInfo().getcHadrons().size();
+
+    //additional details nb/nc from GenParticles
+    unsigned int nbFromGSP(0);
+    for (reco::GenParticle p : gToBB) {
+        double dr(reco::deltaR(jet, p));
+        if (dr < 0.4) ++nbFromGSP;
+    }
+
+    unsigned int ncFromGSP(0);
+    for (reco::GenParticle p : gToCC) {
+        double dr(reco::deltaR(jet, p));
+        if (dr < 0.4) ++ncFromGSP;
+    }
+    
+    if(hflav == 5) { //B jet
+        
+        if(nbs > 1) {
+            if (nbFromGSP > 0) return 2155;
+            else return 55;
+        }
+        
+        else if(nbs == 1) {
+            
+            for (std::vector<reco::GenParticle>::const_iterator it = neutrinosLepB.begin(); it != neutrinosLepB.end(); ++it){
+                if(reco::deltaR(it->eta(),it->phi(),jet.eta(),jet.phi()) < 0.4) {
+                    return 155;
+                }
+            }
+            
+            for (std::vector<reco::GenParticle>::const_iterator it = neutrinosLepB_C.begin(); it != neutrinosLepB_C.end(); ++it){
+                if(reco::deltaR(it->eta(),it->phi(),jet.eta(),jet.phi()) < 0.4) {
+                    return 145;
+                }
+            }
+            
+            return 5;
+        }
+        
+        else {
+            if(usePhysForLightAndUndefined){
+                if(physflav == 21) return 21;
+                else if(physflav == 3) return 3;
+                else if(physflav == 2 || physflav ==1) return 1;
+                else return 0;
+            }
+            else return 0;
+        }
+
+    }
+ 
+    else if(hflav == 4) { //C jet
+        if (ncs > 1) {
+            if (ncFromGSP > 0) return 2144;
+            else return 44;
+        }
+        else return 4;
+        
+    }
+    
+    else { //not a heavy jet
+        if(alltaus.size()>0){ //check for tau in a simplistic way
+
+            bool ishadrtaucontained=true;
+            
+            for(const auto& p:alltaus){
+
+                size_t ndau=p.numberOfDaughters();
+
+                for(size_t i=0;i<ndau;i++){
+                    const reco::Candidate* dau=p.daughter(i);
+                    int daupid=std::abs(dau->pdgId());
+                    if(daupid == 13 || daupid == 11){
+                        ishadrtaucontained=false;
+                        break;
+                    }
+                    if(daupid != 12 && daupid!=14 && daupid!=16 &&reco::deltaR(*dau,jet) > 0.4){
+                        ishadrtaucontained=false;
+                        break;
+                    }
+                }
+            }
+            if(ishadrtaucontained) return 15;
+        } //tau loop
+        
+        if(std::abs(pflav) == 4 || std::abs(pflav) == 5 || nbs || ncs) {
+
+            if(usePhysForLightAndUndefined){
+                if(physflav == 21) return 21;
+                else if(physflav == 3) return 3;
+                else if(physflav == 2 || physflav ==1) return 1;
+                else return 0;
+            }
+            else return 0;
+        }
+        
+        else if(usePhysForLightAndUndefined){
+            if(physflav == 21) return 21;
+            else if(physflav == 3) return 3;
+            else if(physflav == 2 || physflav ==1) return 1;
+            else return 0;
+        }
+        
+        else {
+            if(physflav == 21) return 21;
+            else if(physflav == 3) return 3;
+            else if(physflav == 2 || physflav ==1) return 1;
+            else return 0;
+        }
+    }
+
+    return 0;   
+        
+    }
 
 
 void Analyzer_MINIAOD_new::trackToTrack(std::vector<reco::TransientTrack> selTracks, std::vector<reco::TransientTrack>::const_iterator it, 
